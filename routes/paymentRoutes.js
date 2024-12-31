@@ -1,7 +1,10 @@
 const express = require('express');
-const paymentController = require('../controllers/paymentController');
+const { createPayment } = require('../controllers/paymentController');
+const { verifyToken } = require('../middleware/authMiddleware');
+
 const router = express.Router();
 
-router.post('/create', paymentController.createTransaction);
+// Rute untuk membuat transaksi pembayaran
+router.post('/create', verifyToken, createPayment);
 
 module.exports = router;

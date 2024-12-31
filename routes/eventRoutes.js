@@ -1,11 +1,20 @@
 const express = require('express');
-const { createEvent, getAllEvents, updateEvent, deleteEvent } = require('../controllers/eventController');
-const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
+const { authenticate, authorizeAdmin } = require('../middleware/authMiddleware');
+const { createEvent, updateEvent, deleteEvent, getAllEvents } = require('../controllers/eventController');
+
 const router = express.Router();
 
-router.post('/', authMiddleware, adminMiddleware, createEvent);
+// Rute untuk mendapatkan semua event (public)
 router.get('/', getAllEvents);
-router.put('/:id', authMiddleware, adminMiddleware, updateEvent);
-router.delete('/:id', authMiddleware, adminMiddleware, deleteEvent);
+
+// Rute untuk membuat event baru (khusus admin)
+router.post('/', authenticate, authorizeAdmin, createEvent);
+
+// Rute untuk memperbarui event (khusus admin)
+router.put('/:id', authenticate, authorizeAdmin, updateEvent);
+
+// Rute untuk menghapus event (khusus admin)
+router.delete('/:id', authenticate, authorizeAdmin, deleteEvent);
 
 module.exports = router;
+

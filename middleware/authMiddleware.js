@@ -1,21 +1,31 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User'); // Pastikan model User sudah ada
 
-exports.authMiddleware = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (!token) return res.status(403).json({ message: 'No token provided' });
-
+// Middleware untuk autentikasi JWT
+const authenticate = async (req, res, next) => {
   try {
+    const token = req.headers.authorization.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Unauthorized' });
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // Tambahkan informasi pengguna ke request
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ message: 'Token tidak valid' });
   }
 };
 
-exports.adminMiddleware = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Access denied, admin only' });
+// Middleware untuk otorisasi admin
+const authorizeAdmin = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id); // Cari pengguna berdasarkan ID dari token
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: 'Akses hanya untuk admin' });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
-  next();
 };
+
+module.exports = { authenticate, authorizeAdmin };

@@ -1,47 +1,29 @@
-const snap = require('../config/midtrans');
-const { Payment, User, Event } = require('../models');
+const midtransClient = require('midtrans-client');
 
-exports.createTransaction = async (req, res) => {
+// Initialize Snap API client
+const snap = new midtransClient.Snap({
+  isProduction: false,
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
+  clientKey: process.env.MIDTRANS_CLIENT_KEY,
+});
+
+// Create Payment
+exports.createPayment = async (req, res) => {
+  const { orderId, grossAmount, customerDetails } = req.body;
+
+  const parameter = {
+    transaction_details: {
+      order_id: orderId,
+      gross_amount: grossAmount,
+    },
+    customer_details: customerDetails,
+  };
+
   try {
-    const { userId, eventId, amount } = req.body;
-
-    const user = await User.findByPk(userId);
-    const event = await Event.findByPk(eventId);
-
-    if (!user || !event) {
-      return res.status(404).json({ message: 'User or Event not found' });
-    }
-
-    const transactionDetails = {
-      transaction_details: {
-        order_id: `order-${Date.now()}`,
-        gross_amount: amount,
-      },
-      customer_details: {
-        first_name: user.name,
-        email: user.email,
-      },
-      item_details: [
-        {
-          id: event.id,
-          price: amount,
-          quantity: 1,
-          name: event.name,
-        },
-      ],
-    };
-
-    const paymentResponse = await snap.createTransaction(transactionDetails);
-
-    await Payment.create({
-      userId,
-      eventId,
-      amount,
-      status: 'pending',
-    });
-
-    res.json(paymentResponse);
+    const transaction = await snap.createTransaction(parameter);
+    res.status(200).json({ redirect_url: transaction.redirect_url });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
+

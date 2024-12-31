@@ -1,43 +1,60 @@
+
 const Event = require('../models/Event');
 
-exports.createEvent = async (req, res) => {
-  try {
-    const event = await Event.create(req.body);
-    res.status(201).json(event);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-exports.getAllEvents = async (req, res) => {
+// Mendapatkan semua event
+const getAllEvents = async (req, res) => {
   try {
     const events = await Event.findAll();
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Gagal mendapatkan event.' });
   }
 };
 
-exports.updateEvent = async (req, res) => {
+// Membuat event baru
+const createEvent = async (req, res) => {
   try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
+    const { name, description, price } = req.body;
+    const newEvent = await Event.create({ name, description, price });
+    res.status(201).json(newEvent);
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal membuat event.' });
+  }
+};
 
-    await event.update(req.body);
+// Memperbarui event
+const updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, price } = req.body;
+
+    const event = await Event.findByPk(id);
+    if (!event) return res.status(404).json({ message: 'Event tidak ditemukan.' });
+
+    event.name = name || event.name;
+    event.description = description || event.description;
+    event.price = price || event.price;
+
+    await event.save();
     res.json(event);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Gagal memperbarui event.' });
   }
 };
 
-exports.deleteEvent = async (req, res) => {
+// Menghapus event
+const deleteEvent = async (req, res) => {
   try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
+    const { id } = req.params;
+
+    const event = await Event.findByPk(id);
+    if (!event) return res.status(404).json({ message: 'Event tidak ditemukan.' });
 
     await event.destroy();
-    res.json({ message: 'Event deleted' });
+    res.json({ message: 'Event berhasil dihapus.' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Gagal menghapus event.' });
   }
 };
+
+module.exports = { getAllEvents, createEvent, updateEvent, deleteEvent };
